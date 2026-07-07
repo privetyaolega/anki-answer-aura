@@ -232,7 +232,7 @@ function renderDecks(){
 }
 
 const ROLE_OPTS = [['dont',"Don't know"],['know','Know'],['other','Other'],['off','Off']];
-const DEFAULT_ROLES = {'1':'dont','2':'know','3':'other','4':'other'};
+const DEFAULT_ROLES = {'1':'dont','2':'other','3':'other','4':'know'};
 function initRoles(){
   document.querySelectorAll('#mappop select').forEach(s=>{
     s.innerHTML = ROLE_OPTS.map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
@@ -332,9 +332,9 @@ $('deckall').addEventListener('change', ()=>{
   if ($('deckall').checked) disabledDecks.clear(); else DECKS.forEach(d=>disabledDecks.add(d));
   renderDecks();
 });
-const DEFAULTS = {duration_ms:700, know_color:'#3DDC84', other_color:'#FFC400', dont_know_color:'#FF3B30',
-  reach_pct:30, blur_pct:40, glow_alpha:130, corner_radius_pct:20,
-  ease_roles:{'1':'dont','2':'know','3':'other','4':'other'}, disabled_decks:[]};
+const DEFAULTS = {duration_ms:1000, know_color:'#3DDC84', other_color:'#FFC400', dont_know_color:'#FF3B30',
+  reach_pct:30, blur_pct:25, glow_alpha:75, corner_radius_pct:20,
+  ease_roles:{'1':'dont','2':'other','3':'other','4':'know'}, disabled_decks:[]};
 
 // hooks called by the native dialog buttons in Anki: Save/Apply read auraGetConfig(),
 // Restore Defaults calls auraReset()
