@@ -1,0 +1,354 @@
+<style>
+  :root {
+    --bg:#eef0f3; --panel:#ffffff; --ink:#1d1f23; --muted:#8b8f98;
+    --line:#e7e9ee; --accent:#2563eb;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; min-height:100vh; background:var(--panel); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  .panel {
+    width:100%; min-height:100vh; background:var(--panel); overflow:hidden;
+    display:flex; flex-direction:column;
+  }
+  .head { padding:16px 20px 12px; }
+  .head h1 { margin:0; font-size:15px; font-weight:700; letter-spacing:-.01em; }
+  .head p  { margin:3px 0 0; font-size:11.5px; color:var(--muted); line-height:1.4; }
+
+  /* preview */
+  .stage { display:flex; align-items:center; justify-content:center; padding:22px; background:#f6f7f9; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+  .card-wrap { position:relative; width:460px; height:230px; max-width:100%; }
+  .card {
+    position:absolute; inset:0; background:#fff; color:#1d1f23; border-radius:6px;
+    box-shadow:0 1px 5px rgba(0,0,0,.16); display:flex; align-items:center; justify-content:center;
+    text-align:center; padding:24px; line-height:1.35;
+  }
+  .card.dark { background:#3a3a3a; color:#e9e9ea; }
+  .face { display:flex; flex-direction:column; align-items:center; gap:10px; cursor:pointer; }
+  .face .front, .face .back { font-size:26px; font-weight:600; line-height:1.25; }
+  .face hr { width:170px; border:none; border-top:1px solid rgba(0,0,0,.14); margin:2px 0; }
+  .card.dark .face hr { border-top-color:rgba(255,255,255,.2); }
+  .glowcss { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+  .glowblur { position:absolute; }
+  .glowfill { position:absolute; inset:0; }
+
+  /* controls */
+  .body { padding:16px 20px; flex:1 0 auto; }
+  .seg-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  .seg .sbtn { padding:6px 12px; font-size:12px; font-weight:600; background:transparent; color:var(--ink); cursor:pointer; user-select:none; white-space:nowrap; }
+  .seg .sbtn:not(:last-child) { border-right:1px solid var(--line); }
+  .seg .sbtn.active { color:#fff; }
+  .seg .sbtn[data-mode=know].active { background:#16a34a; }
+  .seg .sbtn[data-mode=other].active { background:#eab308; color:#1d1f23; }
+  .seg .sbtn[data-mode=dont].active { background:#dc2626; }
+  .seg.bg .sbtn.active { background:#111827; color:#fff; }
+  .spacer { flex:1; }
+  .lbl { font-size:11px; font-weight:600; color:var(--muted); }
+
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px 20px; }
+  .ctrl { display:flex; flex-direction:column; gap:5px; }
+  .ctrl .cap { font-size:11.5px; font-weight:600; display:flex; justify-content:space-between; }
+  .ctrl .cap .v { color:var(--muted); font-variant-numeric:tabular-nums; }
+  .ctrl input[type=range] { width:100%; accent-color:var(--accent); }
+  .colors { grid-column:1 / -1; display:flex; gap:18px; align-items:center; padding-top:2px; }
+  .colors .c { display:flex; align-items:center; gap:7px; font-size:11.5px; font-weight:600; }
+  .colors input[type=color] { width:34px; height:26px; padding:0; border:1px solid var(--line); border-radius:6px; background:none; }
+
+  button.btn { font:inherit; font-size:12.5px; font-weight:600; padding:8px 13px; border-radius:9px; border:1px solid var(--line); background:#fff; color:var(--ink); cursor:pointer; }
+  button.btn.play  { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .playbar { padding:14px 20px 0; }
+  .playbar .btn { width:100%; }
+  .mapwrap { position:relative; margin-left:auto; }
+  .link { font:inherit; font-size:11.5px; font-weight:600; color:var(--accent); background:none; border:none; cursor:pointer; padding:4px 2px; }
+  .pop { position:absolute; right:0; bottom:135%; z-index:30; background:#fff; border:1px solid var(--line); border-radius:11px; box-shadow:0 12px 32px rgba(20,25,40,.18); padding:11px 13px; width:220px; }
+  .pop[hidden] { display:none; }
+  .pop .poptitle { font-size:10.5px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.03em; margin-bottom:8px; }
+  .pop .poprow { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:3px 0; font-size:12px; font-weight:600; }
+  .pop .poprow select { font:inherit; font-size:12px; padding:3px 6px; border:1px solid var(--line); border-radius:6px; background:#fff; }
+
+  details { margin-top:14px; }
+  details summary { font-size:11.5px; font-weight:600; color:var(--muted); cursor:pointer; }
+  .deckall { display:flex; align-items:center; gap:9px; margin-top:8px; font-size:12px; font-weight:600; cursor:pointer; }
+  .deckall input { accent-color:var(--accent); width:15px; height:15px; }
+  .decklist { margin-top:8px; max-height:170px; overflow:auto; border:1px solid var(--line); border-radius:8px; }
+  .deckrow { display:flex; align-items:center; gap:9px; padding:6px 11px; font-size:12px; cursor:pointer; }
+  .deckrow + .deckrow { border-top:1px solid var(--line); }
+  .deckrow input { accent-color:var(--accent); width:15px; height:15px; }
+  .deckrow.off { color:var(--muted); }
+  .foot { padding:12px 20px; border-top:1px solid var(--line); font-size:11px; color:var(--muted); line-height:1.5; }
+  .foot a { color:var(--accent); text-decoration:none; }
+</style>
+
+<div class="panel">
+  <div class="head">
+    <h1>Answer Aura</h1>
+    <p>A soft glow flashes around the card each time you answer, colored by the grade you press — green = you knew it, yellow = in‑between, red = Again. Tune it below, preview live, and Apply.</p>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="card-wrap">
+      <div class="card" id="card">
+        <div class="face" id="face">
+          <div class="front" id="front"></div>
+          <hr>
+          <div class="back" id="back"></div>
+        </div>
+      </div>
+      <div class="glowcss" id="glowcss"><div class="glowblur" id="glowblur"><div class="glowfill" id="glowfill"></div></div></div>
+    </div>
+  </div>
+
+  <div class="playbar"><button class="btn play" id="flash">▶ Play flash</button></div>
+
+  <div class="body">
+    <div class="seg-row">
+      <span class="lbl">Preview</span>
+      <div class="seg" id="mode">
+        <div class="sbtn" data-mode="dont">Don't know</div>
+        <div class="sbtn" data-mode="other">Other</div>
+        <div class="sbtn active" data-mode="know">Know</div>
+      </div>
+      <span class="spacer"></span>
+      <span class="lbl">Background</span>
+      <div class="seg bg" id="bg">
+        <div class="sbtn active" data-bg="light">Light</div>
+        <div class="sbtn" data-bg="dark">Dark</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="ctrl">
+        <div class="cap"><span>Reach % (depth)</span><span class="v" id="inset_v">30</span></div>
+        <input id="inset" type="range" min="0" max="100" value="30">
+      </div>
+      <div class="ctrl">
+        <div class="cap"><span>Blur %</span><span class="v" id="blur_v">40</span></div>
+        <input id="blur" type="range" min="0" max="100" value="40">
+      </div>
+      <div class="ctrl">
+        <div class="cap"><span>Intensity</span><span class="v" id="alpha_v">90</span></div>
+        <input id="alpha" type="range" min="0" max="255" value="90">
+      </div>
+      <div class="ctrl">
+        <div class="cap"><span>Corner radius %</span><span class="v" id="radius_v">20</span></div>
+        <input id="radius" type="range" min="0" max="100" value="20">
+      </div>
+      <div class="ctrl">
+        <div class="cap"><span>Duration (ms)</span><span class="v" id="dur_v">400</span></div>
+        <input id="dur" type="range" min="80" max="1500" step="10" value="400">
+      </div>
+      <div class="ctrl"></div>
+
+      <div class="colors">
+        <span class="c"><input id="knowc" type="color" value="#3DDC84">Know</span>
+        <span class="c"><input id="otherc" type="color" value="#FFC400">Other</span>
+        <span class="c"><input id="dontc" type="color" value="#FF3B30">Don't know</span>
+        <div class="mapwrap" id="mapwrap">
+          <button class="link" id="mapbtn" type="button">⚙ Buttons ▾</button>
+          <div class="pop" id="mappop" hidden>
+            <div class="poptitle">Anki answer grade → color</div>
+            <div class="poprow"><span>Again</span><select data-ease="1"></select></div>
+            <div class="poprow"><span>Hard</span><select data-ease="2"></select></div>
+            <div class="poprow"><span>Good</span><select data-ease="3"></select></div>
+            <div class="poprow"><span>Easy</span><select data-ease="4"></select></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <details class="decks">
+      <summary>Decks — where the glow shows</summary>
+      <label class="deckall"><input type="checkbox" id="deckall"><span>All decks</span></label>
+      <div class="decklist" id="decklist"></div>
+    </details>
+  </div>
+
+  <div class="foot">
+    Found a bug or have a suggestion?
+    <a href="https://github.com/privetyaolega/anki-answer-aura/issues" target="_blank" rel="noopener">Open an issue on GitHub</a>.
+  </div>
+</div>
+
+<script>
+window.__INIT_CONFIG__ = /*INIT*/null/*INIT*/;
+const $ = id => document.getElementById(id);
+const glow = $('glowcss');
+const blurEl = $('glowblur');
+const fill = $('glowfill');
+const wrap = document.querySelector('.card-wrap');
+let mode = 'know', anim = null;
+let SURF = [1000, 620];  // real Anki card-area size (px); set by the add-on via _surface
+
+const EXAMPLES = [
+  ['apple','りんご'],
+  ['thank you','merci'],
+  ['water','agua'],
+  ['book','Buch'],
+  ['cat','gatto'],
+  ['house','дом'],
+  ['friend','친구'],
+  ['sun','太阳'],
+  ['hello','olá'],
+  ['love','kärlek'],
+];
+let exIdx = Math.floor(Math.random()*EXAMPLES.length);
+function renderCard(){ $('front').textContent = EXAMPLES[exIdx][0]; $('back').textContent = EXAMPLES[exIdx][1]; }
+
+// deck list: real decks are injected by the add-on via _decks; mock for the browser
+let DECKS = (window.__INIT_CONFIG__ && window.__INIT_CONFIG__._decks)
+  || ['Default', 'Japanese', 'Japanese::N5', 'Japanese::N5::Kanji', 'English', 'Programming', 'Programming::Python'];
+let disabledDecks = new Set();
+// a deck and everything nested under it (Parent + Parent::Child + ...)
+function deckSubtree(name){ return DECKS.filter(d => d===name || d.startsWith(name+'::')); }
+function setDeckEnabled(name, enabled){
+  deckSubtree(name).forEach(d=>{ if(enabled) disabledDecks.delete(d); else disabledDecks.add(d); });
+}
+function updateMaster(){
+  const off = DECKS.filter(d=>disabledDecks.has(d)).length;
+  const m = $('deckall');
+  m.checked = off===0;
+  m.indeterminate = off>0 && off<DECKS.length;
+}
+function renderDecks(){
+  const box = $('decklist'); box.innerHTML = '';
+  [...DECKS].sort((a,b)=>a.localeCompare(b)).forEach(name=>{
+    const depth = name.split('::').length - 1;
+    const leaf = name.split('::').pop();
+    const row = document.createElement('label'); row.className = 'deckrow';
+    row.style.paddingLeft = (11 + depth*18) + 'px';
+    const cb = document.createElement('input'); cb.type = 'checkbox';
+    cb.checked = !disabledDecks.has(name);
+    cb.addEventListener('change', ()=>{
+      setDeckEnabled(name, cb.checked);  // toggling a parent cascades to its subdecks
+      renderDecks(); updateMaster();
+    });
+    const span = document.createElement('span'); span.textContent = leaf;
+    row.classList.toggle('off', !cb.checked);
+    row.appendChild(cb); row.appendChild(span); box.appendChild(row);
+  });
+  updateMaster();
+}
+
+const ROLE_OPTS = [['dont',"Don't know"],['know','Know'],['other','Other'],['off','Off']];
+const DEFAULT_ROLES = {'1':'dont','2':'know','3':'other','4':'other'};
+function initRoles(){
+  document.querySelectorAll('#mappop select').forEach(s=>{
+    s.innerHTML = ROLE_OPTS.map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
+    s.value = DEFAULT_ROLES[s.dataset.ease] || 'off';
+  });
+}
+function readRoles(){ const er={}; document.querySelectorAll('#mappop select').forEach(s=>er[s.dataset.ease]=s.value); return er; }
+
+function params() {
+  return {
+    duration_ms: +$('dur').value,
+    know_color: $('knowc').value.toUpperCase(),
+    other_color: $('otherc').value.toUpperCase(),
+    dont_know_color: $('dontc').value.toUpperCase(),
+    reach_pct: +$('inset').value,
+    blur_pct: +$('blur').value,
+    glow_alpha: +$('alpha').value,
+    corner_radius_pct: +$('radius').value,
+    ease_roles: readRoles(),
+    disabled_decks: [...disabledDecks],
+  };
+}
+function hexToRgb(h){ const n=parseInt(h.slice(1),16); return [(n>>16)&255,(n>>8)&255,n&255]; }
+function modeColor(p){ return mode==='know'?p.know_color : mode==='dont'?p.dont_know_color : p.other_color; }
+
+function sizeToSurface(){
+  // preview keeps the real card's aspect ratio, scaled down to a fixed display width
+  const dispW = 440;
+  const dispH = Math.round(dispW * SURF[1] / SURF[0]);
+  wrap.style.width = dispW + 'px';
+  wrap.style.height = dispH + 'px';
+}
+function roundedHolePath(FW, FH, x0, y0, x1, y1, rr){
+  const outer = `M0 0 H${FW} V${FH} H0 Z`;
+  if (x1<=x0 || y1<=y0) return `path(evenodd, "${outer}")`;  // no hole -> full fill
+  rr = Math.max(0, Math.min(rr, (x1-x0)/2, (y1-y0)/2));
+  const hole = rr<=0
+    ? `M${x0} ${y0} H${x1} V${y1} H${x0} Z`
+    : `M${x0+rr} ${y0} H${x1-rr} A${rr} ${rr} 0 0 1 ${x1} ${y0+rr} V${y1-rr} A${rr} ${rr} 0 0 1 ${x1-rr} ${y1} H${x0+rr} A${rr} ${rr} 0 0 1 ${x0} ${y1-rr} V${y0+rr} A${rr} ${rr} 0 0 1 ${x0+rr} ${y0} Z`;
+  return `path(evenodd, "${outer} ${hole}")`;
+}
+function applyGlow(){
+  // Solid fill minus a soft rounded hole. The blur wrapper is a bit larger than the
+  // container so the blur never eats the outer edge (kept sharp by overflow:hidden).
+  // clip-path goes on the fill, blur on its wrapper, so the already-cut shape is blurred.
+  // reach/blur/radius are percentages of half the smaller side.
+  const p = params();
+  const [r,g,b] = hexToRgb(modeColor(p));
+  const a = (p.glow_alpha/255).toFixed(4);
+  const dispW = wrap.clientWidth, dispH = wrap.clientHeight;
+  const half = Math.min(dispW, dispH) / 2;
+  const reach = p.reach_pct/100 * half;
+  const blur  = p.blur_pct/100 * half;
+  const rad   = p.corner_radius_pct/100 * half;
+  const M = blur + 8;
+  const FW = dispW + 2*M, FH = dispH + 2*M;
+  const x0 = M + reach, y0 = M + reach, x1 = FW - M - reach, y1 = FH - M - reach;
+  blurEl.style.top = blurEl.style.left = blurEl.style.right = blurEl.style.bottom = (-M) + 'px';
+  blurEl.style.filter = `blur(${blur}px)`;
+  fill.style.background = `rgba(${r},${g},${b},${a})`;
+  const clip = roundedHolePath(FW, FH, x0, y0, x1, y1, rad);
+  fill.style.clipPath = clip;
+  fill.style.webkitClipPath = clip;
+}
+function renderStatic(){ if(anim){cancelAnimationFrame(anim);anim=null;} applyGlow(); glow.style.opacity='1'; }
+function playFlash(){
+  if(anim) cancelAnimationFrame(anim);
+  // draw once, then fade the element's opacity (GPU-composited, no banding)
+  applyGlow();
+  glow.style.opacity='1';
+  const p = params(), start = performance.now();
+  anim = requestAnimationFrame(function step(now){
+    const frac=(now-start)/p.duration_ms;
+    if(frac>=1){ glow.style.opacity='0'; anim=null; return; }
+    glow.style.opacity = String(Math.pow(1-frac,2));
+    anim=requestAnimationFrame(step);
+  });
+}
+function syncLabels(){
+  $('inset_v').textContent=$('inset').value; $('blur_v').textContent=$('blur').value;
+  $('alpha_v').textContent=$('alpha').value; $('radius_v').textContent=$('radius').value;
+  $('dur_v').textContent=$('dur').value;
+}
+
+['inset','blur','alpha','radius','dur','knowc','otherc','dontc'].forEach(id=>{
+  $(id).addEventListener('input', ()=>{ syncLabels(); renderStatic(); });
+});
+$('mode').addEventListener('click', e=>{ const b=e.target.closest('.sbtn'); if(!b) return;
+  [...$('mode').children].forEach(x=>x.classList.remove('active')); b.classList.add('active'); mode=b.dataset.mode; renderStatic(); });
+$('bg').addEventListener('click', e=>{ const b=e.target.closest('.sbtn'); if(!b) return;
+  [...$('bg').children].forEach(x=>x.classList.remove('active')); b.classList.add('active'); $('card').classList.toggle('dark', b.dataset.bg==='dark'); });
+$('card').addEventListener('click', ()=>{ exIdx=(exIdx+1)%EXAMPLES.length; renderCard(); });
+$('mapbtn').addEventListener('click', e=>{ e.stopPropagation(); $('mappop').hidden = !$('mappop').hidden; });
+document.addEventListener('click', e=>{ if(!e.target.closest('#mapwrap')) $('mappop').hidden = true; });
+$('flash').addEventListener('click', playFlash);
+$('deckall').addEventListener('change', ()=>{
+  if ($('deckall').checked) disabledDecks.clear(); else DECKS.forEach(d=>disabledDecks.add(d));
+  renderDecks();
+});
+const DEFAULTS = {duration_ms:700, know_color:'#3DDC84', other_color:'#FFC400', dont_know_color:'#FF3B30',
+  reach_pct:30, blur_pct:40, glow_alpha:130, corner_radius_pct:20,
+  ease_roles:{'1':'dont','2':'know','3':'other','4':'other'}, disabled_decks:[]};
+
+// hooks called by the native dialog buttons in Anki: Save/Apply read auraGetConfig(),
+// Restore Defaults calls auraReset()
+window.auraGetConfig = function(){ return params(); };
+window.auraReset = function(){ applyInit(DEFAULTS); syncLabels(); renderStatic(); };
+
+function applyInit(c){
+  if(!c) return;
+  const map = {reach_pct:'inset', blur_pct:'blur', glow_alpha:'alpha', corner_radius_pct:'radius', duration_ms:'dur', know_color:'knowc', other_color:'otherc', dont_know_color:'dontc'};
+  for (const k in map){ if(k in c) $(map[k]).value = c[k]; }
+  if (c.ease_roles) document.querySelectorAll('#mappop select').forEach(s=>{ if(c.ease_roles[s.dataset.ease]) s.value = c.ease_roles[s.dataset.ease]; });
+  if (Array.isArray(c.disabled_decks)) { disabledDecks = new Set(c.disabled_decks); renderDecks(); }
+}
+
+if (window.__INIT_CONFIG__ && Array.isArray(window.__INIT_CONFIG__._surface) && window.__INIT_CONFIG__._surface.length===2) SURF = window.__INIT_CONFIG__._surface;
+renderCard(); initRoles(); renderDecks(); sizeToSurface(); applyInit(window.__INIT_CONFIG__); syncLabels(); renderStatic();
+</script>

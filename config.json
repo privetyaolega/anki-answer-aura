@@ -1,0 +1,11 @@
+{
+    "duration_ms": 700,
+    "know_color": "#3DDC84",
+    "other_color": "#FFC400",
+    "dont_know_color": "#FF3B30",
+    "reach_pct": 30,
+    "blur_pct": 40,
+    "glow_alpha": 130,
+    "corner_radius_pct": 20,
+    "ease_roles": { "1": "dont", "2": "know", "3": "other", "4": "other" }
+}
